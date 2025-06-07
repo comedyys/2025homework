@@ -1,12 +1,24 @@
+# pylint: disable=missing-module-docstring
+
 import csv
 import re
 from peewee import Model, CharField, FloatField, IntegerField, SqliteDatabase
 
 # 数据库连接
-db = SqliteDatabase("movie.db")
+DB = SqliteDatabase("movie.db")  # 常量改为大写
 
-# 表结构实体
+
 class Movie(Model):
+    """豆瓣电影数据模型
+    
+    属性:
+        title (CharField): 电影标题(最大50字符)
+        rating_num (FloatField): 评分
+        comment_num (IntegerField): 评论数
+        year (IntegerField): 上映年份
+        link (CharField): 详情页链接(最大100字符)
+        image_link (CharField): 图片链接(最大100字符)
+    """
     title = CharField(max_length=50)
     rating_num = FloatField()
     comment_num = IntegerField()
@@ -15,18 +27,30 @@ class Movie(Model):
     image_link = CharField(max_length=100)
 
     class Meta:
-        database = db
+        """元数据配置"""
+        database = DB
         table_name = 'douban_movie'
 
-# 保存数据的函数
+
 def save_data(csv_file_path):
+    """将CSV电影数据保存到数据库
+    
+    参数:
+        csv_file_path (str): CSV文件路径
+        
+    处理流程:
+        1. 连接数据库
+        2. 重建数据表
+        3. 读取并清洗CSV数据
+        4. 批量插入数据库
+    """
     # 连接数据库
-    db.connect()
+    DB.connect()
 
     # 删除现有表（注意：这会清空表中数据！）
-    db.drop_tables([Movie], safe=True)
+    DB.drop_tables([Movie], safe=True)
     # 创建新表
-    db.create_tables([Movie], safe=True)
+    DB.create_tables([Movie], safe=True)
 
     movies = []
     with open(csv_file_path, 'r', encoding='utf-8') as file:
@@ -38,7 +62,11 @@ def save_data(csv_file_path):
             try:
                 # 清洗评论数
                 comment_num = row['评论数'].strip()
-                comment_num = int(re.sub(r'[^0-9]', '', comment_num)) if comment_num else 0
+                comment_num = int(
+                    re.sub(
+                        r'[^0-9]',
+                        '',
+                        comment_num)) if comment_num else 0
 
                 # 创建电影记录
                 movies.append({
@@ -49,21 +77,22 @@ def save_data(csv_file_path):
                     'link': row['链接'].strip()[:100] if row['链接'] else "",
                     'image_link': row['图片链接'].strip()[:100] if row['图片链接'] else ""
                 })
-            except (ValueError, KeyError) as e:
-                print(f"跳过无效行: {row}, 错误: {e}")
+            except (ValueError, KeyError) as error:
+                print(f"跳过无效行: {row}, 错误: {error}")
                 continue
-    
+
     # 批量插入
     if movies:
-        with db.atomic():
+        with DB.atomic():
             Movie.insert_many(movies).execute()
         print(f"成功插入 {len(movies)} 条记录")
     else:
         print("没有数据插入，可能 CSV 文件为空或格式错误")
-    
-    db.close()
+
+    DB.close()
+
 
 # 示例调用
 if __name__ == "__main__":
-    csv_file_path = "E:\\Microsoft VS Code Project\\douban_movies.csv"
-    save_data(csv_file_path)
+    CSV_FILE_PATH = "E:\\Microsoft VS Code Project\\douban_movies.csv"  # 常量改为大写
+    save_data(CSV_FILE_PATH)

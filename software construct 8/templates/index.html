@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>{{ year }}年上映的电影</h2>
+    {% if movies %}
+        <ul>
+            {% for movie in movies %}
+                <li>
+                    {{ movie }}
+                    <form method="post" action="{{ url_for('add_favorite') }}" style="display:inline;">
+                        <input type="hidden" name="movie_title" value="{{ movie }}">
+                        <button type="submit">收藏</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>未找到{{ year }}年的电影记录</p>
+    {% endif %}
+    <p><a href="{{ url_for('movie_search') }}">返回搜索</a></p>
+{% endblock %}

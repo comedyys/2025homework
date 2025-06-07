@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>按年份搜索电影</h2>
+    <form method="post">
+        <div class="form-group">
+            <label for="release_year">输入年份:</label>
+            <input type="text" id="release_year" name="release_year" placeholder="例如：2020">
+        </div>
+        <button type="submit">搜索</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,58 @@
+{
+  "definitions": {},
+  "info": {
+    "description": "powered by Flasgger",
+    "termsOfService": "/tos",
+    "title": "A swagger API",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "主页"
+      },
+      "post": {
+        "summary": "主页"
+      }
+    },
+    "/search_movies": {
+      "post": {
+        "parameters": [
+          {
+            "description": "用户输入的年份",
+            "in": "formData",
+            "name": "release_year",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "summary": "根据年份筛选电影"
+      }
+    },
+    "/signin": {
+      "get": {
+        "summary": "登录表单页面"
+      },
+      "post": {
+        "parameters": [
+          {
+            "description": "用户名",
+            "in": "formData",
+            "name": "username",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "密码",
+            "in": "formData",
+            "name": "password",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "summary": "登录操作"
+      }
+    }
+  },
+  "swagger": "2.0"
+}

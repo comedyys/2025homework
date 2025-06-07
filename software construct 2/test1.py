@@ -1,13 +1,15 @@
+# pylint: disable=missing-module-docstring
 import requests
 from bs4 import BeautifulSoup
 import time
 import random
 from fake_useragent import UserAgent
 
+
 def fetch_douban_top250():
     # 随机User-Agent生成器
     ua = UserAgent()
-    
+
     # 基础URL和备用Referer列表
     base_url = "https://movie.douban.com/top250"
     referers = [
@@ -16,15 +18,15 @@ def fetch_douban_top250():
         "https://www.google.com/",
         "https://www.bing.com/"
     ]
-    
+
     movies = []
     session = requests.Session()
-    
+
     for page in range(10):  # 抓取全部10页
-        url = f"{base_url}?start={page*25}"
+        url = f"{base_url}?start={page * 25}"
         retry_count = 0
         max_retries = 3
-        
+
         while retry_count < max_retries:
             try:
                 # 动态生成请求头
@@ -37,57 +39,64 @@ def fetch_douban_top250():
                     "DNT": "1",
                     "Upgrade-Insecure-Requests": "1"
                 }
-                
-                print(f"\n📺 正在抓取第 {page+1}/10 页 | 尝试 #{retry_count+1}")
+
+                print(f"\n📺 正在抓取第 {page + 1}/10 页 | 尝试 #{retry_count + 1}")
                 print(f"   User-Agent: {headers['User-Agent'][:60]}...")
-                
+
                 # 随机延迟 + 抖动
                 delay = random.uniform(2.5, 6.0)
                 time.sleep(delay)
-                
+
                 response = session.get(url, headers=headers, timeout=15)
                 response.encoding = 'utf-8'
-                
+
                 # 检查验证码页面
                 if "检测到有异常请求" in response.text:
                     print("❌ 触发豆瓣反爬验证码，请更换IP或稍后再试")
                     return movies
-                
+
                 if response.status_code != 200:
                     print(f"⚠️ 状态码异常: {response.status_code} | 等待重试...")
                     retry_count += 1
                     continue
-                    
+
                 soup = BeautifulSoup(response.text, 'html.parser')
                 items = soup.find_all('div', class_='item')
-                
+
                 if not items:
                     print("⚠️ 页面解析失败: 未找到电影条目")
                     retry_count += 1
                     continue
-                
+
                 print(f"✅ 发现 {len(items)} 部电影")
-                
+
                 # 解析电影数据
                 for idx, item in enumerate(items, 1):
                     try:
                         # 标题处理（中文+英文）
-                        titles = [t.text.strip() for t in item.find_all('span', class_='title')]
+                        titles = [
+                            t.text.strip() for t in item.find_all(
+                                'span', class_='title')]
                         chinese_title = titles[0] if titles else "未知标题"
-                        english_title = titles[1].replace("\xa0", " ") if len(titles) > 1 else ""
+                        english_title = titles[1].replace(
+                            "\xa0", " ") if len(titles) > 1 else ""
                         full_title = f"{chinese_title} {english_title}".strip()
-                        
+
                         # 导演和年份
-                        info = item.find('div', class_='bd').p.get_text(strip=True)
+                        info = item.find(
+                            'div', class_='bd').p.get_text(
+                            strip=True)
                         director = info.split('\n')[0].strip()
-                        year = info.split('\n')[1].strip().split('/')[0].strip()
-                        
+                        year = info.split('\n')[1].strip().split(
+                            '/')[0].strip()
+
                         # 评分和引用
-                        rating = item.find('span', class_='rating_num').text.strip()
+                        rating = item.find(
+                            'span', class_='rating_num').text.strip()
                         quote_elem = item.find('span', class_='inq')
                         quote = quote_elem.text.strip() if quote_elem else "暂无引用"
                         link = item.find('a')['href']
-                        
+
                         movies.append({
                             'title': full_title,
                             'director': director,
@@ -96,29 +105,30 @@ def fetch_douban_top250():
                             'quote': quote,
                             'link': link
                         })
-                        
+
                         print(f"   #{idx} {full_title[:20]}... | 评分: {rating}")
-                        
+
                     except Exception as e:
                         print(f"   🚫 条目解析失败: {str(e)}")
                         continue
-                
+
                 break  # 成功抓取，跳出重试循环
-                
+
             except requests.exceptions.RequestException as e:
                 print(f"🌐 网络请求异常: {str(e)} | 等待重试...")
                 retry_count += 1
                 time.sleep(5)
-                
+
             except Exception as e:
                 print(f"❌ 未知错误: {str(e)}")
                 retry_count += 1
                 time.sleep(3)
-        
+
         else:
-            print(f"⛔ 第 {page+1} 页抓取失败，已达最大重试次数")
-    
+            print(f"⛔ 第 {page + 1} 页抓取失败，已达最大重试次数")
+
     return movies
+
 
 def save_to_html(movies, filename="douban_top250.html"):
     # 创建HTML文档结构
@@ -240,17 +250,17 @@ def save_to_html(movies, filename="douban_top250.html"):
                 <h1>豆瓣电影Top250</h1>
                 <div class="stats">共收录 <strong>""" + str(len(movies)) + """</strong> 部经典电影</div>
             </header>
-            
+
             <div class="movie-grid">
     """
-    
+
     # 添加电影卡片
     for i, movie in enumerate(movies, 1):
         html_content += f"""
                 <div class="movie-card">
                     <div class="movie-header">
                         <div class="movie-title">
-                            <span class="rank">#{i}</span> 
+                            <span class="rank">#{i}</span>
                             <a href="{movie['link']}" target="_blank">{movie['title']}</a>
                         </div>
                         <div class="movie-director">{movie['director']}</div>
@@ -262,11 +272,11 @@ def save_to_html(movies, filename="douban_top250.html"):
                     </div>
                 </div>
         """
-    
+
     # 添加页脚
     html_content += """
             </div>
-            
+
             <footer>
                 <p>数据来源: 豆瓣电影 | 抓取时间: """ + time.strftime("%Y-%m-%d %H:%M:%S") + """</p>
                 <p>仅用于学习目的，请勿用于商业用途</p>
@@ -275,35 +285,37 @@ def save_to_html(movies, filename="douban_top250.html"):
     </body>
     </html>
     """
-    
+
     # 写入文件
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html_content)
     print(f"\n💾 HTML文件已保存至 {filename}")
 
+
 if __name__ == "__main__":
-    print("="*60)
+    print("=" * 60)
     print("🎬 豆瓣电影Top250抓取程序启动")
-    print("="*60)
-    
+    print("=" * 60)
+
     start_time = time.time()
     movies = fetch_douban_top250()
     elapsed = time.time() - start_time
-    
+
     if movies:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print(f"✅ 抓取完成! 耗时: {elapsed:.1f}秒 | 共获取 {len(movies)} 部电影")
-        print("="*60)
-        
+        print("=" * 60)
+
         # 保存为HTML
         save_to_html(movies)
-        
+
         # 显示摘要
         print("\n🏆 Top 5 电影:")
         for i, m in enumerate(movies[:5], 1):
             print(f"{i}. {m['title']} ({m['rating']})")
-        
-        print(f"\n⭐ 最低分电影: {min(movies, key=lambda x: float(x['rating']))['title']} ({min(movies, key=lambda x: float(x['rating']))['rating']})")
+
+        print(f"\n⭐ 最低分电影: {min(movies, key=lambda x: float(x['rating']))[
+              'title']} ({min(movies, key=lambda x: float(x['rating']))['rating']})")
         print(f"💾 结果已保存为 douban_top250.html")
     else:
         print("\n⚠️ 未获取到有效数据，请检查网络或反爬设置")
