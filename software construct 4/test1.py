@@ -1,5 +1,5 @@
-from flask import Flask
-from flask import request
+# pylint: disable=missing-module-docstring
+from flask import Flask, request
 
 # 创建Flask应用实例
 app = Flask(__name__)
